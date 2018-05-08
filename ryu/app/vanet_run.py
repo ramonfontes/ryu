@@ -72,7 +72,7 @@ class MitmSocket(L2Socket):
 class KRAckAttackFt():
     def __init__(self, interface):
         self.nic_iface = interface
-        self.nic_mon = 'mon0'
+        self.nic_mon = 'mon1'
         self.clientmac = scapy.arch.get_if_hwaddr(interface)
 
         self.sock = None
@@ -127,170 +127,17 @@ class _wireless(object):
 
         extra = p.notdecoded
         signal = -(256 - ord(extra[-4:-3]))
-        self.do_something(p.addr1, p.addr2, p.addr3, signal, mininet_dir, log_dir)
+        self.do_something(p.addr3, signal, mininet_dir, log_dir)
         # t = a[i].fields['wlan.fc.type_subtype eq 8']
 
-    def do_something(self, addr1, addr2, addr3, signal, mininet_dir, log_dir):
-        case1 = True
-        ping_test = False
-        iperf_test = True
+    def do_something(self, addr3, signal, mininet_dir, log_dir):
+        case1 = False
+        ping_test = True
+        iperf_test = False
         http_test = False
-        #print signal
-        #print radius.mac_
-        #print getAttr.status_
         if case1:
             if addr3 == '00:00:00:00:00:03' and signal >= -85:
                 if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
-                    if getAttr.client1 in radius.mac_ and radius.rule1[
-                        getAttr.client1] in getAttr.users_telcoA or \
-                                            getAttr.client2 in radius.mac_ and radius.rule1[
-                                getAttr.client2] in getAttr.users_telcoA:
-                        if getAttr.currentAP != addr3:
-                            getAttr.time_[addr3] = time.time()
-                            getAttr.status_[addr3] = ''
-                            getAttr.app_running = False
-                            getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.2' % mininet_dir)
-                            if http_test:
-                                os.system('pkill -f SimpleHTTPServer')
-                            getAttr.iface.append(addr3)
-                        if not getAttr.app_running:
-                            if http_test:
-                                os.system('%sutil/m h2 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
-                            #if iperf_test:
-                            #    os.system('%sutil/m h2 iperf -s -i 1' % mininet_dir)
-                            getAttr.app_running = True
-                if getAttr.status_[addr3] == '' and addr3 in getAttr.iface:
-                    if time.time() - getAttr.time_[addr3] > 3:
-                        if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
-                        if iperf_test:
-                            print "222222222222222222222222222"
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 -u -b10M >> %s' % (mininet_dir, log_dir))
-                        if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
-                        getAttr.status_[addr3] = 'connected'
-            elif addr3 == '00:00:00:00:00:03' and signal < -85:
-                if addr3 in getAttr.iface:
-                    getAttr.iface.remove(addr3)
-
-            if addr3 == '00:00:00:00:00:04' and signal >= -85:
-                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
-                    if getAttr.client1 in radius.mac_ and \
-                                    radius.rule1[getAttr.client1] in getAttr.users_telcoA or \
-                                            getAttr.client2 in radius.mac_ and \
-                                            radius.rule1[getAttr.client2] in getAttr.users_telcoA:
-                        if getAttr.currentAP != addr3:
-                            getAttr.time_[addr3] = time.time()
-                            getAttr.status_[addr3] = ''
-                            getAttr.app_running = False
-                            getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.3' % mininet_dir)
-                            # os.system('pkill -f SimpleHTTPServer')
-                            if http_test:
-                                os.system('pkill -f \"i sta1-wlan0\"')
-                            getAttr.iface.append(addr3)
-                        if not getAttr.app_running:
-                            if http_test:
-                                os.system('%sutil/m h3 python -m SimpleHTTPServer 808%s &' % (
-                            mininet_dir, len(getAttr.iface)))
-                            #if iperf_test:
-                            #    os.system('%sutil/m h3 iperf -s -i 1' % mininet_dir)
-                            getAttr.app_running = True
-                if getAttr.status_[
-                    addr3] == '' and addr3 in getAttr.iface:
-                    if time.time() - getAttr.time_[addr3] > 3:
-                        if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
-                        if iperf_test:
-                            print "333333333333333333333333"
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 -u -b10M >> %s' % (mininet_dir, log_dir))
-                        if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
-                        getAttr.status_[addr3] = 'connected'
-            elif addr3 == '00:00:00:00:00:04' and signal < -85:
-                if addr3 in getAttr.iface:
-                    getAttr.iface.remove(addr3)
-
-            if addr3 == '00:00:00:00:00:05' and signal >= -85:
-                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
-                    if getAttr.client1 in radius.mac_ and radius.rule1[
-                        getAttr.client1] in getAttr.users_telcoA or \
-                                            getAttr.client2 in radius.mac_ and radius.rule1[
-                                getAttr.client2] in getAttr.users_telcoA:
-                        if getAttr.currentAP != addr3:
-                            getAttr.time_[addr3] = time.time()
-                            getAttr.status_[addr3] = ''
-                            getAttr.app_running = False
-                            getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.4' % mininet_dir)
-                            # os.system('pkill -f SimpleHTTPServer')
-                            if http_test or iperf_test:
-                                os.system('pkill -f \"i sta1-wlan1\"')
-                            getAttr.iface.append(addr3)
-                        if not getAttr.app_running:
-                            if http_test:
-                                os.system('%sutil/m h4 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
-                            #if iperf_test:
-                            #    os.system('%sutil/m h4 iperf -s -i 1' % mininet_dir)
-                            getAttr.app_running = True
-                if getAttr.status_[
-                    addr3] == '' and addr3 in getAttr.iface:
-                    if time.time() - getAttr.time_[addr3] > 3:
-                        if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
-                        if iperf_test:
-                            print "44444444444444444444444"
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 -u -b10M >> %s' % (mininet_dir, log_dir))
-                        if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
-                        getAttr.status_[addr3] = 'connected'
-            elif addr3 == '00:00:00:00:00:05' and signal < -85:
-                if addr3 in getAttr.iface:
-                    getAttr.iface.remove(addr3)
-            #print radius.rule1
-            #print '%s----%s' %(addr3, signal)
-            if addr3 == '00:00:00:00:00:06' and signal >= -85:
-                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
-                    if getAttr.client1 in radius.mac_ and \
-                                    radius.rule1[getAttr.client1] in getAttr.users_telcoA or \
-                                            getAttr.client2 in radius.mac_ and \
-                                            radius.rule1[getAttr.client2] in getAttr.users_telcoA:
-                        if getAttr.currentAP != addr3:
-                            getAttr.time_[addr3] = time.time()
-                            getAttr.status_[addr3] = ''
-                            getAttr.app_running = False
-                            getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.5' % mininet_dir)
-                            #os.system('ovs-ofctl add-flow s18 in_port=1,actions=set_queue:123,normal')
-                            os.system('ovs-ofctl -O Openflow13 add-flow s18 in_port=1,priority=1,actions=meter:1,2')
-                            os.system('ovs-ofctl -O Openflow13 add-flow s18 in_port=2,priority=1,actions=meter:1,1')
-                            getAttr.iface.append(addr3)
-                        if not getAttr.app_running:
-                            if http_test:
-                                os.system('%sutil/m h5 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
-                            getAttr.app_running = True
-                if getAttr.status_[addr3] == '' and addr3 in getAttr.iface:
-                    if time.time() - getAttr.time_[addr3] > 3:
-                        if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
-                        if iperf_test:
-                            print "55555555555555555555555"
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 -u -b10M >> %s' % (mininet_dir, log_dir))
-                        if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
-                        getAttr.status_[addr3] = 'connected'
-            elif addr3 == '00:00:00:00:00:06' and signal < -85:
-                if addr3 in getAttr.iface:
-                    getAttr.iface.remove(addr3)
-        else:
-            #print addr3
-            if addr3 == '00:00:00:00:00:03' and signal >= -85:
-                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
                     if getAttr.client1 in radius.mac_ and \
                                     radius.rule1[getAttr.client1] in getAttr.users_telcoA or \
                                             getAttr.client2 in radius.mac_ and radius.rule1[
@@ -300,8 +147,9 @@ class _wireless(object):
                             getAttr.status_[addr3] = ''
                             getAttr.app_running = False
                             getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.2' % mininet_dir)
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan0 10.0.0.1' % mininet_dir)
+                            os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.2' % mininet_dir)
                             if http_test:
                                 os.system('pkill -f SimpleHTTPServer')
                             getAttr.iface.append(addr3)
@@ -316,11 +164,14 @@ class _wireless(object):
                         os.system('echo \'Generating data to %s\' >> %s' % (addr3, log_dir))
                         os.system('echo \'------------------------\'>> %s' % log_dir)
                         if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 wget http://192.168.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
                         if iperf_test:
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 192.168.0.100 -i 1 -u -b10M -t 30>> %s' % (mininet_dir, log_dir))
                         if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 192.168.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
                         getAttr.status_[addr3] = 'connected'
             elif addr3 == '00:00:00:00:00:03' and signal < -85:
                 if addr3 in getAttr.iface:
@@ -337,11 +188,14 @@ class _wireless(object):
                             getAttr.status_[addr3] = ''
                             getAttr.app_running = False
                             getAttr.currentAP = addr3
+                            #if http_test:
+                            os.system('pkill -f \"i sta1-wlan0\"')
+                            #os.system('%sutil/m sta1 ifconfig sta1-wlan0 0' % mininet_dir)
+                            #os.system('%sutil/m sta1 ifconfig sta1-wlan1 10.0.0.1' % mininet_dir)
                             os.system('%sutil/m sta1 ifconfig sta1-wlan0 0' % mininet_dir)
                             os.system('%sutil/m sta1 ifconfig sta1-wlan1 10.0.0.1' % mininet_dir)
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route del -host 192.168.20.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.3' % mininet_dir)
+                            os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.3' % mininet_dir)
                             if http_test:
                                 os.system('pkill -f SimpleHTTPServer')
                             getAttr.iface.append(addr3)
@@ -357,11 +211,14 @@ class _wireless(object):
                         os.system('echo \'Generating data to %s\' >> %s' % (addr3, log_dir))
                         os.system('echo \'------------------------\'>> %s' % log_dir)
                         if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 wget http://192.168.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
                         if iperf_test:
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 192.168.0.100 -i 1 -u -b10M -t 30>> %s' % (mininet_dir, log_dir))
                         if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 192.168.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
                         getAttr.status_[addr3] = 'connected'
             elif addr3 == '00:00:00:00:00:04' and signal < -85:
                 if addr3 in getAttr.iface:
@@ -378,9 +235,8 @@ class _wireless(object):
                             getAttr.status_[addr3] = ''
                             getAttr.app_running = False
                             getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route add -host 192.168.10.100 gw 10.0.0.4' % mininet_dir)
-                            if http_test:
-                                os.system('pkill -f SimpleHTTPServer')
+                            if http_test or iperf_test or ping_test:
+                                os.system('pkill -f \"i sta1-wlan0\"')
                             getAttr.iface.append(addr3)
                         if not getAttr.app_running:
                             if http_test:
@@ -389,16 +245,171 @@ class _wireless(object):
                             #if iperf_test:
                             #    os.system('%sutil/m h4 iperf -s -i 1' % mininet_dir)
                             getAttr.app_running = True
+            elif addr3 == '00:00:00:00:00:05' and signal < -85:
+                if addr3 in getAttr.iface:
+                    getAttr.iface.remove(addr3)
+
+            if addr3 == '00:00:00:00:00:06' and signal >= -85:
+                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
+                    if getAttr.client1 in radius.mac_ and \
+                                    radius.rule1[getAttr.client1] in getAttr.users_telcoA or \
+                                            getAttr.client2 in radius.mac_ and \
+                                            radius.rule1[getAttr.client2] in getAttr.users_telcoA:
+                        if getAttr.currentAP != addr3:
+                            getAttr.time_[addr3] = time.time()
+                            getAttr.status_[addr3] = ''
+                            getAttr.app_running = False
+                            getAttr.currentAP = addr3
+                            os.system('pkill -f \"i sta1-wlan0\"')
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan0 0' % mininet_dir)
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan1 10.0.0.1' % mininet_dir)
+                            os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.5' % mininet_dir)
+                            if http_test:
+                                os.system('pkill -f SimpleHTTPServer')
+                            os.system('ovs-ofctl -O Openflow13 add-flow s17 in_port=2,actions=meter:1,1')
+                            os.system('ovs-ofctl -O Openflow13 add-flow s17 in_port=1,actions=meter:1,2')
+                            getAttr.iface.append(addr3)
+                        if not getAttr.app_running:
+                            if http_test:
+                                os.system('%sutil/m h4 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
+                            #if iperf_test:
+                            #    os.system('%sutil/m h4 iperf -s -i 1' % mininet_dir)
+                            getAttr.app_running = True
                 if getAttr.status_[addr3] == '' and addr3 in getAttr.iface:
                     if time.time() - getAttr.time_[addr3] > 3:
                         os.system('echo \'Generating data to %s\' >> %s' % (addr3, log_dir))
                         os.system('echo \'------------------------\'>> %s' % log_dir)
                         if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.10.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 wget http://192.168.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
                         if iperf_test:
-                            os.system('%sutil/m sta1 iperf -c 192.168.10.100 -i 1 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 192.168.0.100 -i 1 -u -b10M -t 30 >> %s' % (mininet_dir, log_dir))
                         if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.10.100 -c 10 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 192.168.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
+                        getAttr.status_[addr3] = 'connected'
+            elif addr3 == '00:00:00:00:00:06' and signal < -85:
+                if addr3 in getAttr.iface:
+                    getAttr.iface.remove(addr3)
+        else:
+            if addr3 == '00:00:00:00:00:03' and signal >= -85:
+                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
+                    if getAttr.client1 in radius.mac_ and \
+                                    radius.rule1[getAttr.client1] in getAttr.users_telcoA or \
+                                            getAttr.client2 in radius.mac_ and \
+                                            radius.rule1[getAttr.client2] in getAttr.users_telcoA:
+                        if getAttr.currentAP != addr3:
+                            getAttr.time_[addr3] = time.time()
+                            getAttr.status_[addr3] = ''
+                            getAttr.app_running = False
+                            getAttr.currentAP = addr3
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan0 10.0.0.1' % mininet_dir)
+                            #os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.2' % mininet_dir)
+                            if http_test:
+                                os.system('pkill -f SimpleHTTPServer')
+                            getAttr.iface.append(addr3)
+                        if not getAttr.app_running:
+                            if http_test:
+                                os.system('%sutil/m h2 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
+                            #if iperf_test:
+                            #    os.system('%sutil/m h2 iperf -s -i 1' % mininet_dir)
+                            getAttr.app_running = True
+                if getAttr.status_[addr3] == '' and addr3 in getAttr.iface:
+                    if time.time() - getAttr.time_[addr3] > 3:
+                        if http_test:
+                            os.system('%sutil/m sta1 wget http://192.168.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                        if iperf_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 192.168.0.100 -i 1 -u -b10M -t 30 >> %s' % (mininet_dir, log_dir))
+                        if ping_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 192.168.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
+                        getAttr.status_[addr3] = 'connected'
+            elif addr3 == '00:00:00:00:00:03' and signal < -85:
+                if addr3 in getAttr.iface:
+                    getAttr.iface.remove(addr3)
+
+            if addr3 == '00:00:00:00:00:04' and signal >= -85:
+                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
+                    if getAttr.client1 in radius.mac_ and \
+                                    radius.rule1[getAttr.client1] in getAttr.users_telcoA or \
+                                            getAttr.client2 in radius.mac_ and \
+                                            radius.rule1[getAttr.client2] in getAttr.users_telcoA:
+                        if getAttr.currentAP != addr3:
+                            getAttr.time_[addr3] = time.time()
+                            getAttr.status_[addr3] = ''
+                            getAttr.app_running = False
+                            getAttr.currentAP = addr3
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan1 10.0.0.1' % mininet_dir)
+                            #os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.3' % mininet_dir)
+                            # os.system('pkill -f SimpleHTTPServer')
+                            #if http_test:
+                            #    os.system('pkill -f \"i sta1-wlan0\"')
+                            getAttr.iface.append(addr3)
+                        if not getAttr.app_running:
+                            if http_test:
+                                os.system('%sutil/m h3 python -m SimpleHTTPServer 808%s &' % (
+                            mininet_dir, len(getAttr.iface)))
+                            #if iperf_test:
+                            #    os.system('%sutil/m h3 iperf -s -i 1' % mininet_dir)
+                            getAttr.app_running = True
+                if getAttr.status_[
+                    addr3] == '' and addr3 in getAttr.iface:
+                    if time.time() - getAttr.time_[addr3] > 3:
+                        if http_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 wget http://192.168.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                        if iperf_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 192.168.0.100 -i 1 -u -b10M -t 30 >> %s' % (mininet_dir, log_dir))
+                        if ping_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 192.168.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
+                        getAttr.status_[addr3] = 'connected'
+            elif addr3 == '00:00:00:00:00:04' and signal < -85:
+                if addr3 in getAttr.iface:
+                    getAttr.iface.remove(addr3)
+
+            if addr3 == '00:00:00:00:00:05' and signal >= -85:
+                if len(getAttr.iface) <= 1 and addr3 not in getAttr.iface:
+                    if getAttr.client1 in radius.mac_ and radius.rule1[
+                        getAttr.client1] in getAttr.users_telcoA or \
+                                            getAttr.client2 in radius.mac_ and radius.rule1[
+                                getAttr.client2] in getAttr.users_telcoA:
+                        if getAttr.currentAP != addr3:
+                            getAttr.time_[addr3] = time.time()
+                            getAttr.status_[addr3] = ''
+                            getAttr.app_running = False
+                            getAttr.currentAP = addr3
+                            #os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan0 192.168.100.1' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 172.16.0.100 gw 192.168.100.2' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.5' % mininet_dir)
+                            # os.system('pkill -f SimpleHTTPServer')
+                            #if http_test or iperf_test or ping_test:
+                            #    os.system('pkill -f \"i sta1-wlan1\"')
+                            getAttr.iface.append(addr3)
+                        if not getAttr.app_running:
+                            if http_test:
+                                os.system('%sutil/m h4 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
+                            #if iperf_test:
+                            #    os.system('%sutil/m h4 iperf -s -i 1' % mininet_dir)
+                            getAttr.app_running = True
+                if getAttr.status_[addr3] == '' and addr3 in getAttr.iface:
+                    if time.time() - getAttr.time_[addr3] > 3:
+                        if http_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 wget http://172.16.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                        if iperf_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 172.16.0.100 -i 1 -u -b10M -t 30 >> %s' % (mininet_dir, log_dir))
+                        if ping_test:
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 172.16.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
                         getAttr.status_[addr3] = 'connected'
             elif addr3 == '00:00:00:00:00:05' and signal < -85:
                 if addr3 in getAttr.iface:
@@ -415,29 +426,32 @@ class _wireless(object):
                             getAttr.status_[addr3] = ''
                             getAttr.app_running = False
                             getAttr.currentAP = addr3
-                            os.system('%sutil/m sta1 route del -host 192.168.10.100' % mininet_dir)
-                            os.system('%sutil/m sta1 route add -host 192.168.20.100 gw 172.16.0.254' % mininet_dir)
-                            if http_test:
-                                os.system('pkill -f SimpleHTTPServer')
-                            #os.system('ovs-ofctl add-flow s17 in_port=3,actions=set_queue:123,normal')
-                            os.system('ovs-ofctl -O Openflow13 add-flow s17 in_port=3,actions=meter:1,normal')
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan0 0' % mininet_dir)
+                            os.system('%sutil/m sta1 ifconfig sta1-wlan1 10.0.0.1' % mininet_dir)
+                            #os.system('%sutil/m sta1 route del -host 192.168.0.100' % mininet_dir)
+                            os.system('%sutil/m sta1 route del -host 192.168.0.100 gw 10.0.0.2' % mininet_dir)
+                            os.system('%sutil/m sta1 route add -host 192.168.0.100 gw 10.0.0.5' % mininet_dir)
+                            #os.system('ovs-ofctl add-flow s18 in_port=1,actions=set_queue:123,normal')
+                            os.system('ovs-ofctl -O Openflow13 add-flow s17 in_port=2,priority=1,dl_type=0x800,'
+                                      'nw_dst=192.168.0.100,actions=meter:1,1')
+                            os.system('ovs-ofctl -O Openflow13 add-flow s17 in_port=1,priority=1,dl_type=0x800,'
+                                      'nw_dst=192.168.0.1,actions=meter:1,2')
                             getAttr.iface.append(addr3)
                         if not getAttr.app_running:
                             if http_test:
-                                os.system('%sutil/m h4 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
-                            #if iperf_test:
-                            #    os.system('%sutil/m h4 iperf -s -i 1' % mininet_dir)
+                                os.system('%sutil/m h5 python -m SimpleHTTPServer 808%s &' % (mininet_dir, len(getAttr.iface)))
                             getAttr.app_running = True
                 if getAttr.status_[addr3] == '' and addr3 in getAttr.iface:
                     if time.time() - getAttr.time_[addr3] > 3:
-                        os.system('echo \'Generating data to %s\' >> %s' % (addr3, log_dir))
-                        os.system('echo \'------------------------\'>> %s' % log_dir)
                         if http_test:
-                            os.system('%sutil/m sta1 wget http://192.168.20.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 wget http://192.168.0.100:808%s >> %s' % (mininet_dir, len(getAttr.iface), log_dir))
                         if iperf_test:
-                            os.system('%sutil/m sta1 iperf -c 192.168.20.100 -i 1 -t 30 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 iperf -c 192.168.0.100 -i 1 -u -b10M -t 30 >> %s' % (mininet_dir, log_dir))
                         if ping_test:
-                            os.system('%sutil/m sta1 ping 192.168.20.100 -c 30 >> %s' % (mininet_dir, log_dir))
+                            print '>>>>>> %s' % addr3
+                            os.system('%sutil/m sta1 ping 192.168.0.100 -c 30 >> %s' % (mininet_dir, log_dir))
                         getAttr.status_[addr3] = 'connected'
             elif addr3 == '00:00:00:00:00:06' and signal < -85:
                 if addr3 in getAttr.iface:
@@ -450,7 +464,7 @@ class vanet_run(app_manager.RyuApp):
         super(vanet_run, self).__init__(*args, **kwargs)
 
         # TODO: Verify that we only accept CCMP?
-        interface = 'sta1-wlan0'
+        interface = 'sta1-wlan2'
         if not interface:
             log(ERROR, "Failed to determine wireless interface. Specify one using the -i parameter.")
             quit(1)
@@ -459,7 +473,7 @@ class vanet_run(app_manager.RyuApp):
         thread.daemon = True
         thread.start()
 
-    def run(self, interface='sta1-wlan0'):
+    def run(self, interface='sta1-wlan2'):
         global attack
         attack = KRAckAttackFt(interface)
         atexit.register(cleanup)

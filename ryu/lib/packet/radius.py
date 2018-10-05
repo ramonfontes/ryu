@@ -26,12 +26,9 @@ from . import ether_types
 
 
 UDP_DST_PORT = 1812
-mac = []
+user_ = []
 mac_ = []
-name = []
-name_ = []
-rule = []
-rule1 = {}
+
 
 class radius(packet_base.PacketBase):
 
@@ -131,25 +128,20 @@ class radius(packet_base.PacketBase):
             (type,) \
                 = struct.unpack('!B', buf[20:21])
 
-        mac1 = ''
         i = 0
         for pack in buf:
             (n_type,) = struct.unpack('!B', pack)
             i += 1
             if radius.CALLING_STATION_ID == n_type:
-                mac1 = str(buf[i + 1:i + 18])
-                if mac1 not in mac and '-0' in mac1:
-                    mac.append(mac1)
-                    mac_.append(mac1)
-                    break
+                mac = str(buf[i + 1:i + 18])
 
-        nam_ = str(buf[22:25])
-
-        if len(mac_) >= 1 and mac1 not in rule1 \
-                and nam_ != '' and mac1 != '' and '-0' in mac1:
-            name.append(str(nam_))
-            name_.append(nam_)
-            rule1[mac1] = nam_
+        user = str(buf[22:25])
+        if 'bob' == user or 'joe' == user:
+            if '00-00' in mac and user not in user_:
+                user_.append(user)
+                mac_.append(user)
+                print('Username: %s' % user)
+                print('Host: %s' % mac)
 
         while opt_bin:
             option, opt_bin = Option.parser(opt_bin)

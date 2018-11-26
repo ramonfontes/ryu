@@ -24,6 +24,8 @@ from . import packet_utils
 from . import bgp
 from . import openflow
 from . import zebra
+from . import wifi
+
 
 
 LOG = logging.getLogger(__name__)
@@ -124,6 +126,8 @@ class tcp(packet_base.PacketBase):
             return zebra._ZebraMessageFromZebra
         elif dst_port == zebra.ZEBRA_PORT:
             return zebra.ZebraMessage
+        elif src_port == wifi.WIFI_PORT:
+            return wifi.WiFiMessage
         else:
             return None
 

@@ -94,10 +94,11 @@ class wifiAPP(app_manager.RyuApp):
         _ipv4 = pkt.get_protocol(ipv4.ipv4)
         if hasattr(_ipv4, 'proto'):
             if _ipv4.proto == 6:
-                _tcp = pkt.get_protocol(tcp.tcp)
                 _wifi = pkt.get_protocol(wifi.WiFiMessage)
-                self.logger.info("wifi msg: bssid %s, ssid %s, rssi %s",
-                                 _wifi.bssid, _wifi.ssid, _wifi.rssi)
+                self.logger.info("wifi msg: client %s, bssid %s, ssid %s, rssi %s, "
+                                 "target_bssid %s, target_rssi %s",
+                                 _wifi.client, _wifi.bssid, _wifi.ssid, _wifi.rssi,
+                                 _wifi.target_bssid, _wifi.target_rssi)
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port

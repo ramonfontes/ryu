@@ -46,11 +46,15 @@ class WiFiMessage(packet_base.PacketBase):
     # +-+-+-+-+-+-+-+-+-+-+-+-+-
 
 
-    def __init__(self, bssid=None, ssid=None, rssi=None):
+    def __init__(self, client=None, bssid=None, ssid=None, rssi=None,
+                 target_bssid=None, target_rssi=None):
         super(WiFiMessage, self).__init__()
+        self.client = client
         self.bssid = bssid
         self.ssid = ssid
         self.rssi = rssi
+        self.target_bssid = target_bssid
+        self.target_rssi = target_rssi
 
     @classmethod
     def parser(cls, buf):
@@ -61,11 +65,14 @@ class WiFiMessage(packet_base.PacketBase):
         opt_len = (ver_opt_len & 0x3F) * 4
 
         msg_ = buf.split(',')
-        bssid = msg_[0]
-        ssid = msg_[1]
-        rssi = msg_[2]
+        client = msg_[0] #useful for Mininet-WiFi
+        bssid = msg_[1]
+        ssid = msg_[2]
+        rssi = msg_[3]
+        target_bssid = msg_[4]
+        target_rssi = msg_[5]
 
-        msg = cls(bssid, ssid, rssi)
+        msg = cls(client, bssid, ssid, rssi, target_bssid, target_rssi)
 
         from . import ethernet
         WiFiMessage._TYPES = ethernet.ethernet._TYPES

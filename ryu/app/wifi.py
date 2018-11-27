@@ -90,8 +90,8 @@ class wifiAPP(app_manager.RyuApp):
             return
         dst = eth.dst
         src = eth.src
-
         dpid = datapath.id
+
         self.mac_to_port.setdefault(dpid, {})
         mn_wifi_dir = '~/master/master/mininet-wifi/util/m'
 
@@ -123,7 +123,6 @@ class wifiAPP(app_manager.RyuApp):
                                      _wifi.target_bssid, target_rssi)
 
                     if rssi < target_rssi and target_rssi > - 70:
-                        print "bbbbbb"
                         if wifi.WiFiMsg.association['sta%s' % client_id] != _wifi.target_bssid:
                             os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
@@ -131,12 +130,8 @@ class wifiAPP(app_manager.RyuApp):
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.target_bssid
                     if wifi.WiFiMsg.association['sta%s' % client_id] == _wifi.target_bssid:
-                        print "sssss"
                         os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
                                   % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
-
-                        # self.logger.info("wifi msg:: number of clients associated with %s: %s",
-                    #                 _wifi.bssid, n_clients)
                 elif _udp.src_port == 8001: #Controller to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiCtoCMsg)
                     self.logger.info("wifiCtoC msg:: client %s, bssid %s",

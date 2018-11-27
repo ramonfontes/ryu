@@ -22,6 +22,7 @@ from . import dhcp6
 from . import vxlan
 from . import geneve
 from . import radius
+from . import wifi
 
 
 class udp(packet_base.PacketBase):
@@ -68,6 +69,10 @@ class udp(packet_base.PacketBase):
             return geneve.geneve
         if dst_port == radius.UDP_DST_PORT:
             return radius.radius
+        elif src_port == wifi.WIFI_PORT:
+            return wifi.WiFiMsg
+        elif src_port == wifi.WIFI_CTOC_PORT:
+            return wifi.WiFiCtoCMsg
         return None
 
     @classmethod

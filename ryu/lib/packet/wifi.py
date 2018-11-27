@@ -26,9 +26,80 @@ from . import ether_types
 
 
 WIFI_PORT = 8000
+WIFI_CTOC_PORT = 8001
 
 
-class WiFiMessage(packet_base.PacketBase):
+class WiFiMsg(packet_base.PacketBase):
+
+    _HEADER_FMT = "!BBHI"
+    _MIN_LEN = struct.calcsize(_HEADER_FMT)
+    association = dict()
+
+    # 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    # | Code | Identifier | Length |
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    # | |
+    # | Authenticator |
+    # | |
+    # | |
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    # | Attributes...
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-
+
+
+    def __init__(self, client=None, bssid=None, ssid=None, rssi=None,
+                 target_bssid=None, target_rssi=None):
+        super(WiFiMsg, self).__init__()
+        self.client = client
+        self.bssid = bssid
+        self.ssid = ssid
+        self.rssi = rssi
+        self.target_bssid = target_bssid
+        self.target_rssi = target_rssi
+
+    @classmethod
+    def parser(cls, buf):
+        (ver_opt_len, flags, protocol,
+         vni) = struct.unpack_from(cls._HEADER_FMT, buf)
+        version = ver_opt_len >> 6
+        # The Opt Len field expressed in four byte multiples.
+        opt_len = (ver_opt_len & 0x3F) * 4
+
+        msg_ = buf.split(',')
+        client = msg_[0] #client name: useful for Mininet-WiFi
+        bssid = msg_[1]
+        ssid = msg_[2]
+        rssi = msg_[3]
+        target_bssid = msg_[4]
+        target_rssi = msg_[5]
+
+        msg = cls(client, bssid, ssid, rssi, target_bssid, target_rssi)
+
+        from . import ethernet
+        WiFiMsg._TYPES = ethernet.ethernet._TYPES
+        WiFiMsg.register_packet_type(ethernet.ethernet,
+                                    ether_types.ETH_TYPE_TEB)
+
+
+        return (msg, WiFiMsg.get_packet_type(protocol),
+                buf[cls._MIN_LEN + opt_len:])
+
+    def serialize(self, payload=None, prev=None):
+        tunnel_options = bytearray()
+        for o in self.options:
+            tunnel_options += o.serialize()
+        self.opt_len = len(tunnel_options)
+        # The Opt Len field expressed in four byte multiples.
+        opt_len = self.opt_len // 4
+
+        return (struct.pack(self._HEADER_FMT,
+                            (self.version << 6) | opt_len,
+                            self.flags, self.protocol, self.vni << 8)
+                + tunnel_options)
+
+
+class WiFiCtoCMsg(packet_base.PacketBase):
 
     _HEADER_FMT = "!BBHI"
     _MIN_LEN = struct.calcsize(_HEADER_FMT)
@@ -46,15 +117,10 @@ class WiFiMessage(packet_base.PacketBase):
     # +-+-+-+-+-+-+-+-+-+-+-+-+-
 
 
-    def __init__(self, client=None, bssid=None, ssid=None, rssi=None,
-                 target_bssid=None, target_rssi=None):
-        super(WiFiMessage, self).__init__()
+    def __init__(self, client=None, bssid=None):
+        super(WiFiCtoCMsg, self).__init__()
         self.client = client
         self.bssid = bssid
-        self.ssid = ssid
-        self.rssi = rssi
-        self.target_bssid = target_bssid
-        self.target_rssi = target_rssi
 
     @classmethod
     def parser(cls, buf):
@@ -65,22 +131,18 @@ class WiFiMessage(packet_base.PacketBase):
         opt_len = (ver_opt_len & 0x3F) * 4
 
         msg_ = buf.split(',')
-        client = msg_[0] #useful for Mininet-WiFi
+        client = msg_[0] #client name: useful for Mininet-WiFi
         bssid = msg_[1]
-        ssid = msg_[2]
-        rssi = msg_[3]
-        target_bssid = msg_[4]
-        target_rssi = msg_[5]
 
-        msg = cls(client, bssid, ssid, rssi, target_bssid, target_rssi)
+        msg = cls(client, bssid)
 
         from . import ethernet
-        WiFiMessage._TYPES = ethernet.ethernet._TYPES
-        WiFiMessage.register_packet_type(ethernet.ethernet,
+        WiFiCtoCMsg._TYPES = ethernet.ethernet._TYPES
+        WiFiCtoCMsg.register_packet_type(ethernet.ethernet,
                                     ether_types.ETH_TYPE_TEB)
 
 
-        return (msg, WiFiMessage.get_packet_type(protocol),
+        return (msg, WiFiCtoCMsg.get_packet_type(protocol),
                 buf[cls._MIN_LEN + opt_len:])
 
     def serialize(self, payload=None, prev=None):

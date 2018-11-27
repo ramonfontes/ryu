@@ -127,7 +127,9 @@ class tcp(packet_base.PacketBase):
         elif dst_port == zebra.ZEBRA_PORT:
             return zebra.ZebraMessage
         elif src_port == wifi.WIFI_PORT:
-            return wifi.WiFiMessage
+            return wifi.WiFiMsg
+        elif src_port == wifi.WIFI_CTOC_PORT:
+            return wifi.WiFiCtoCMsg
         else:
             return None
 

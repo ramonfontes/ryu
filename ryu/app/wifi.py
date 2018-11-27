@@ -12,6 +12,8 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import subprocess
+import os
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -23,6 +25,7 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import ipv4
 from ryu.lib.packet import wifi
 from ryu.lib.packet import tcp
+from ryu.lib.packet import udp
 from ryu.lib.packet import ether_types
 
 
@@ -90,15 +93,57 @@ class wifiAPP(app_manager.RyuApp):
 
         dpid = datapath.id
         self.mac_to_port.setdefault(dpid, {})
+        mn_wifi_dir = '~/master/master/mininet-wifi/util/m'
 
         _ipv4 = pkt.get_protocol(ipv4.ipv4)
+
         if hasattr(_ipv4, 'proto'):
-            if _ipv4.proto == 6:
-                _wifi = pkt.get_protocol(wifi.WiFiMessage)
-                self.logger.info("wifi msg: client %s, bssid %s, ssid %s, rssi %s, "
-                                 "target_bssid %s, target_rssi %s",
-                                 _wifi.client, _wifi.bssid, _wifi.ssid, _wifi.rssi,
-                                 _wifi.target_bssid, _wifi.target_rssi)
+            if _ipv4.proto == 17:
+                _udp = pkt.get_protocol(udp.udp)
+                if _udp.src_port == 8000: #Client to Controller
+                    _wifi = pkt.get_protocol(wifi.WiFiMsg)
+
+                    target_rssi = int(_wifi.target_rssi)
+                    rssi = int(_wifi.rssi)
+                    client_id = "%01d" % (int(_wifi.client[-2:]),)
+                    wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
+
+                    if _wifi.target_bssid:
+                        for ap in ([_wifi.bssid, _wifi.target_bssid]):
+                            ap_id = "%01d" % (int(ap[-2:]),)
+                            n_clients = int(subprocess.check_output('hostapd_cli -i ap%s-wlan1 '
+                                                                    'list_sta | wc -l'
+                                                                    % ap_id, shell=True))
+                            self.logger.info("wifi msg:: bssid %s has %s associated stations..",
+                                             ap, n_clients)
+
+                    self.logger.info("wifi msg:: client sta%s, rssi %s, bssid %s, ssid %s,"
+                                     "target_bssid %s, target_rssi %s",
+                                     client_id, rssi, _wifi.bssid, _wifi.ssid,
+                                     _wifi.target_bssid, target_rssi)
+
+                    if rssi < target_rssi and target_rssi > - 70:
+                        print "bbbbbb"
+                        if wifi.WiFiMsg.association['sta%s' % client_id] != _wifi.target_bssid:
+                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
+                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
+                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan_results '
+                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
+                            wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.target_bssid
+                    if wifi.WiFiMsg.association['sta%s' % client_id] == _wifi.target_bssid:
+                        print "sssss"
+                        os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
+                                  % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
+
+                        # self.logger.info("wifi msg:: number of clients associated with %s: %s",
+                    #                 _wifi.bssid, n_clients)
+                elif _udp.src_port == 8001: #Controller to Controller
+                    _wifi = pkt.get_protocol(wifi.WiFiCtoCMsg)
+                    self.logger.info("wifiCtoC msg:: client %s, bssid %s",
+                                     _wifi.client, _wifi.bssid)
+
+                    os.system('sh hostapd_cli -i ap1-wlan1 deauthenticate '
+                              '%s >/dev/null 2>&1' % _wifi.client)
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port

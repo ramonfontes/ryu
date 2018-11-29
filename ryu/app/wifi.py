@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import subprocess
 import os
 
@@ -27,6 +28,7 @@ from ryu.lib.packet import wifi
 from ryu.lib.packet import tcp
 from ryu.lib.packet import udp
 from ryu.lib.packet import ether_types
+from scapy import all as scapy
 
 
 class wifiAPP(app_manager.RyuApp):
@@ -106,39 +108,52 @@ class wifiAPP(app_manager.RyuApp):
                     target_rssi = int(_wifi.target_rssi)
                     rssi = int(_wifi.rssi)
                     client_id = "%01d" % (int(_wifi.client[-2:]),)
-                    wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
 
-                    if _wifi.target_bssid:
+                    if 'sta%s' % client_id in wifi.WiFiMsg.association:
+                        if wifi.WiFiMsg.association['sta%s' % client_id]:
+                            client = '02:00:00:00:00:%02d' % int(client_id)
+                            msg = "%s,%s" % (client, wifi.WiFiMsg.association['sta%s' % client_id])
+                            packet_ = scapy.IP(src="172.17.0.2", dst="172.17.0.3") / scapy.UDP(sport=8001, dport=8002) / msg
+                            scapy.send(packet_, verbose=0, iface="eth0")
+
+                    #if _wifi.bssid not in wifi.WiFiMsg.association['sta%s' % client_id]:
+                    #    os.system('~/ctrl-msg.py %s %s' % (_wifi.client, _wifi.bssid))
+                    #    wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
+
+                    if _wifi.target_bssid and _wifi.bssid:
                         for ap in ([_wifi.bssid, _wifi.target_bssid]):
                             ap_id = "%01d" % (int(ap[-2:]),)
-                            n_clients = int(subprocess.check_output('hostapd_cli -i ap%s-wlan1 '
-                                                                    'list_sta | wc -l'
-                                                                    % ap_id, shell=True))
-                            self.logger.info("wifi msg:: bssid %s has %s associated stations..",
-                                             ap, n_clients)
+                            #n_clients = int(subprocess.check_output('hostapd_cli -i ap%s-wlan1 '
+                            #                                        'list_sta | wc -l'
+                            #                                        % ap_id, shell=True))
+                            #self.logger.info("wifi msg:: bssid %s has %s associated stations..",
+                            #                 ap, n_clients)
 
                     self.logger.info("wifi msg:: client sta%s, rssi %s, bssid %s, ssid %s,"
                                      "target_bssid %s, target_rssi %s",
                                      client_id, rssi, _wifi.bssid, _wifi.ssid,
                                      _wifi.target_bssid, target_rssi)
-
+                    if rssi > target_rssi:
+                        wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
                     if rssi < target_rssi and target_rssi > - 70:
                         if wifi.WiFiMsg.association['sta%s' % client_id] != _wifi.target_bssid:
-                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
-                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
-                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan_results '
-                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
+                            #os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
+                            #          '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
+                            #os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan_results '
+                            #          '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.target_bssid
-                    if wifi.WiFiMsg.association['sta%s' % client_id] == _wifi.target_bssid:
-                        os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
-                                  % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
+                    if 'sta%s' % client_id in wifi.WiFiMsg.association:
+                        if wifi.WiFiMsg.association['sta%s' % client_id] == _wifi.target_bssid:
+                            #os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
+                            #          % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
+                            wifi.WiFiMsg.association['sta%s' % client_id] = ''
                 elif _udp.src_port == 8001: #Controller to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiCtoCMsg)
                     self.logger.info("wifiCtoC msg:: client %s, bssid %s",
                                      _wifi.client, _wifi.bssid)
 
-                    os.system('sh hostapd_cli -i ap1-wlan1 deauthenticate '
-                              '%s >/dev/null 2>&1' % _wifi.client)
+                    #os.system('sh hostapd_cli -i ap1-wlan1 deauthenticate '
+                     #         '%s >/dev/null 2>&1' % _wifi.client)
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port

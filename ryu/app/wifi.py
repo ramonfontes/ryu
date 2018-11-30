@@ -109,20 +109,20 @@ class wifiAPP(app_manager.RyuApp):
                     rssi = int(_wifi.rssi)
                     client_id = "%01d" % (int(_wifi.client[-2:]),)
 
-                    if 'sta%s' % client_id in wifi.WiFiMsg.association:
-                        if wifi.WiFiMsg.association['sta%s' % client_id]:
-                            client = '02:00:00:00:00:%02d' % int(client_id)
-                            msg = "%s,%s" % (client, wifi.WiFiMsg.association['sta%s' % client_id])
-                            packet_ = scapy.IP(src="172.17.0.2", dst="172.17.0.3") / scapy.UDP(sport=8001, dport=8002) / msg
-                            scapy.send(packet_, verbose=0, iface="eth0")
+                    #if 'sta%s' % client_id in wifi.WiFiMsg.association:
+                    #    if wifi.WiFiMsg.association['sta%s' % client_id]:
+                    #        client = '02:00:00:00:00:%02d' % int(client_id)
+                    #        msg = "%s,%s" % (client, wifi.WiFiMsg.association['sta%s' % client_id])
+                    #        packet_ = scapy.IP(src="172.17.0.2", dst="172.17.0.3") / scapy.UDP(sport=8001, dport=8002) / msg
+                    #        scapy.send(packet_, verbose=0, iface="eth0")
 
                     #if _wifi.bssid not in wifi.WiFiMsg.association['sta%s' % client_id]:
                     #    os.system('~/ctrl-msg.py %s %s' % (_wifi.client, _wifi.bssid))
                     #    wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
 
-                    if _wifi.target_bssid and _wifi.bssid:
-                        for ap in ([_wifi.bssid, _wifi.target_bssid]):
-                            ap_id = "%01d" % (int(ap[-2:]),)
+                    #if _wifi.target_bssid and _wifi.bssid:
+                    #    for ap in ([_wifi.bssid, _wifi.target_bssid]):
+                    #        ap_id = "%01d" % (int(ap[-2:]),)
                             #n_clients = int(subprocess.check_output('hostapd_cli -i ap%s-wlan1 '
                             #                                        'list_sta | wc -l'
                             #                                        % ap_id, shell=True))

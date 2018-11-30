@@ -49,7 +49,7 @@ class WiFiMsg(packet_base.PacketBase):
 
 
     def __init__(self, client=None, bssid=None, ssid=None, rssi=None,
-                 target_bssid=None, target_rssi=None):
+                 target_bssid=None, target_rssi=None, load=None, target_load=None):
         super(WiFiMsg, self).__init__()
         self.client = client
         self.bssid = bssid
@@ -57,6 +57,8 @@ class WiFiMsg(packet_base.PacketBase):
         self.rssi = rssi
         self.target_bssid = target_bssid
         self.target_rssi = target_rssi
+        self.load = load
+        self.target_load = target_load
 
     @classmethod
     def parser(cls, buf):
@@ -73,8 +75,10 @@ class WiFiMsg(packet_base.PacketBase):
         rssi = msg_[3]
         target_bssid = msg_[4]
         target_rssi = msg_[5]
+        load = msg_[6]
+        target_load = msg_[7]
 
-        msg = cls(client, bssid, ssid, rssi, target_bssid, target_rssi)
+        msg = cls(client, bssid, ssid, rssi, target_bssid, target_rssi, load, target_load)
 
         from . import ethernet
         WiFiMsg._TYPES = ethernet.ethernet._TYPES

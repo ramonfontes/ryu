@@ -132,7 +132,7 @@ class wifiAPP(app_manager.RyuApp):
                     self.logger.info("wifi msg:: client sta%s, rssi %s, bssid %s, ssid %s,"
                                      "target_bssid %s, target_rssi %s, load %s, target_load %s",
                                      client_id, rssi, _wifi.bssid, _wifi.ssid,
-                                     _wifi.target_bssid, target_rssi, wifi.load, wifi.target_load)
+                                     _wifi.target_bssid, target_rssi, _wifi.load, _wifi.target_load)
                     if rssi > target_rssi:
                         wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
                     if rssi < target_rssi and target_rssi > - 70:

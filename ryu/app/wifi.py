@@ -123,11 +123,11 @@ class wifiAPP(app_manager.RyuApp):
                     #if _wifi.target_bssid and _wifi.bssid:
                     #    for ap in ([_wifi.bssid, _wifi.target_bssid]):
                     #        ap_id = "%01d" % (int(ap[-2:]),)
-                            #n_clients = int(subprocess.check_output('hostapd_cli -i ap%s-wlan1 '
-                            #                                        'list_sta | wc -l'
-                            #                                        % ap_id, shell=True))
-                            #self.logger.info("wifi msg:: bssid %s has %s associated stations..",
-                            #                 ap, n_clients)
+                    #        n_clients = int(subprocess.check_output('%s ap%s hostapd_cli -i ap%s-wlan1 '
+                    #                                                'list_sta | wc -l'
+                    #                                                % (mn_wifi_dir, ap_id, ap_id), shell=True))
+                    #        self.logger.info("wifi msg:: bssid %s has %s associated stations..",
+                    #                         ap, n_clients)
 
                     self.logger.info("wifi msg:: client sta%s, rssi %s, bssid %s, ssid %s,"
                                      "target_bssid %s, target_rssi %s, load %s, target_load %s",
@@ -135,17 +135,17 @@ class wifiAPP(app_manager.RyuApp):
                                      _wifi.target_bssid, target_rssi, _wifi.load, _wifi.target_load)
                     if rssi > target_rssi:
                         wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
-                    if rssi < target_rssi and target_rssi > - 70:
+                    if rssi < target_rssi and target_rssi > -70:
                         if wifi.WiFiMsg.association['sta%s' % client_id] != _wifi.target_bssid:
-                            #os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
-                            #          '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
-                            #os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan_results '
-                            #          '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
+                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
+                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
+                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan_results '
+                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.target_bssid
                     if 'sta%s' % client_id in wifi.WiFiMsg.association:
                         if wifi.WiFiMsg.association['sta%s' % client_id] == _wifi.target_bssid:
-                            #os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
-                            #          % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
+                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
+                                      % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
                             wifi.WiFiMsg.association['sta%s' % client_id] = ''
                 elif _udp.src_port == 8001: #Controller to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiCtoCMsg)

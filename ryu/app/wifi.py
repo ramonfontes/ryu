@@ -95,7 +95,7 @@ class wifiAPP(app_manager.RyuApp):
         dpid = datapath.id
 
         self.mac_to_port.setdefault(dpid, {})
-        mn_wifi_dir = '~/master/master/mininet-wifi/util/m'
+        mn_wifi_dir = '~/mininet-wifi/util/m'
 
         _ipv4 = pkt.get_protocol(ipv4.ipv4)
 
@@ -129,31 +129,35 @@ class wifiAPP(app_manager.RyuApp):
                     #        self.logger.info("wifi msg:: bssid %s has %s associated stations..",
                     #                         ap, n_clients)
 
-                    self.logger.info("wifi msg:: client sta%s, rssi %s, bssid %s, ssid %s,"
+                    self.logger.info("wifi msg:: client car%s, rssi %s, bssid %s, ssid %s,"
                                      "target_bssid %s, target_rssi %s, load %s, target_load %s",
                                      client_id, rssi, _wifi.bssid, _wifi.ssid,
                                      _wifi.target_bssid, target_rssi, _wifi.load, _wifi.target_load)
                     if rssi > target_rssi:
-                        wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
+                        wifi.WiFiMsg.association['car%s' % client_id] = _wifi.bssid
                     if rssi < target_rssi and target_rssi > -70:
-                        if wifi.WiFiMsg.association['sta%s' % client_id] != _wifi.target_bssid:
-                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan '
+                        if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
+                            os.system('%s car%s wpa_cli -i car%s-wlan0 scan '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
-                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 scan_results '
+                            os.system('%s car%s wpa_cli -i car%s-wlan0 scan_results '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
-                            wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.target_bssid
-                    if 'sta%s' % client_id in wifi.WiFiMsg.association:
-                        if wifi.WiFiMsg.association['sta%s' % client_id] == _wifi.target_bssid:
-                            os.system('%s sta%s wpa_cli -i sta%s-wlan0 roam %s >/dev/null 2>&1'
+                            wifi.WiFiMsg.association['car%s' % client_id] = _wifi.target_bssid
+
+                    n_aps = int(subprocess.check_output('%s car%s wpa_cli -i car%s-wlan0 scan_results | wc -l'
+                                                                    % (mn_wifi_dir, client_id, client_id), shell=True))
+                    if n_aps>2 and 'car%s' % client_id in wifi.WiFiMsg.association:
+                        if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid:
+                            os.system('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'
                                       % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
-                            wifi.WiFiMsg.association['sta%s' % client_id] = ''
+                            wifi.WiFiMsg.association['car%s' % client_id] = ''
+                            ap_id = "%01d" % (int(_wifi.bssid[-2:]),)
+                            os.system('%s enb%s hostapd_cli -i enb%s-wlan1 deauthenticate '
+                                     '%s >/dev/null 2>&1' % (mn_wifi_dir, ap_id, ap_id, _wifi.client))
                 elif _udp.src_port == 8001: #Controller to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiCtoCMsg)
                     self.logger.info("wifiCtoC msg:: client %s, bssid %s",
                                      _wifi.client, _wifi.bssid)
 
-                    #os.system('sh hostapd_cli -i ap1-wlan1 deauthenticate '
-                     #         '%s >/dev/null 2>&1' % _wifi.client)
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port

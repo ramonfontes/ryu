@@ -137,16 +137,22 @@ class wifiAPP(app_manager.RyuApp):
                         wifi.WiFiMsg.association['car%s' % client_id] = _wifi.bssid
                     if rssi < target_rssi and target_rssi > -70:
                         if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
+                            self.logger.info('%s car%s wpa_cli -i car%s-wlan0 scan '
+                                      '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             os.system('%s car%s wpa_cli -i car%s-wlan0 scan '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             os.system('%s car%s wpa_cli -i car%s-wlan0 scan_results '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             wifi.WiFiMsg.association['car%s' % client_id] = _wifi.target_bssid
 
-                    n_aps = int(subprocess.check_output('%s car%s wpa_cli -i car%s-wlan0 scan_results | wc -l'
-                                                                    % (mn_wifi_dir, client_id, client_id), shell=True))
-                    if n_aps>2 and 'car%s' % client_id in wifi.WiFiMsg.association:
+                    n_aps = int(subprocess.check_output('%s car%s wpa_cli -i car%s-wlan0 '
+                                                        'scan_results | wc -l'
+                                                        % (mn_wifi_dir, client_id, client_id),
+                                                        shell=True))
+                    if n_aps>2 and 'car%s' % client_id in wifi.WiFiMsg.association and int(_wifi.target_load)<5:
                         if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid:
+                            self.logger.info('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'
+                                      % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
                             os.system('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'
                                       % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
                             wifi.WiFiMsg.association['car%s' % client_id] = ''

@@ -15,6 +15,7 @@
 
 import subprocess
 import os
+# import redis
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
@@ -37,7 +38,8 @@ class wifiAPP(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(wifiAPP, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
-
+        #self.redis_conn = redis.Redis(host="172.17.0.1")
+         
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
@@ -75,18 +77,22 @@ class wifiAPP(app_manager.RyuApp):
     def _packet_in_handler(self, ev):
         # If you hit this you might want to increase
         # the "miss_send_length" of your switch
+        #self.redis_conn = redis.Redis(host="172.17.0.1")
+    
         if ev.msg.msg_len < ev.msg.total_len:
             self.logger.debug("packet truncated: only %s of %s bytes",
                               ev.msg.msg_len, ev.msg.total_len)
+    
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
-
+        # print msg.data
+        from ryu.lib.packet import packet
         pkt = packet.Packet(msg.data)
+        print pkt
         eth = pkt.get_protocols(ethernet.ethernet)[0]
-
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
             # ignore lldp packet
             return
@@ -95,7 +101,7 @@ class wifiAPP(app_manager.RyuApp):
         dpid = datapath.id
 
         self.mac_to_port.setdefault(dpid, {})
-        mn_wifi_dir = '~/mininet-wifi/util/m'
+        mn_wifi_dir = '/root/mininet-wifi/util/m'
 
         _ipv4 = pkt.get_protocol(ipv4.ipv4)
 
@@ -104,11 +110,11 @@ class wifiAPP(app_manager.RyuApp):
                 _udp = pkt.get_protocol(udp.udp)
                 if _udp.src_port == 8000: #Client to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiMsg)
-
+                
                     target_rssi = int(_wifi.target_rssi)
                     rssi = int(_wifi.rssi)
                     client_id = "%01d" % (int(_wifi.client[-2:]),)
-
+                    #self.redis_conn.publish('c0',str(_wifi.rssi))    
                     #if 'sta%s' % client_id in wifi.WiFiMsg.association:
                     #    if wifi.WiFiMsg.association['sta%s' % client_id]:
                     #        client = '02:00:00:00:00:%02d' % int(client_id)
@@ -133,10 +139,20 @@ class wifiAPP(app_manager.RyuApp):
                                      "target_bssid %s, target_rssi %s, load %s, target_load %s",
                                      client_id, rssi, _wifi.bssid, _wifi.ssid,
                                      _wifi.target_bssid, target_rssi, _wifi.load, _wifi.target_load)
+                    # self.redis_conn.publish('c0', str(rssi))
+                    print('publish: c0  sends a rssi %s'%(str(rssi)))
                     if rssi > target_rssi:
                         wifi.WiFiMsg.association['car%s' % client_id] = _wifi.bssid
-                    if rssi < target_rssi and target_rssi > -70:
-                        if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
+                    #if rssi < target_rssi and target_rssi > -40:
+                    #   if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
+                    msg1 = "%s" % ("Hello")
+                    print msg1
+                    print "Src is %s" % _ipv4.src
+                    from scapy.all import *
+                    packet1 = IP(src="172.17.0.2", dst="%s" % (_ipv4.src))/UDP(sport=8002, dport=8000)/msg1
+                    print packet1
+                    # send(packet1, verbose=0, iface="eth0")
+                    '''
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 scan '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             os.system('%s car%s wpa_cli -i car%s-wlan0 scan '
@@ -144,11 +160,12 @@ class wifiAPP(app_manager.RyuApp):
                             os.system('%s car%s wpa_cli -i car%s-wlan0 scan_results '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
                             wifi.WiFiMsg.association['car%s' % client_id] = _wifi.target_bssid
-
+                    '''
                     n_aps = int(subprocess.check_output('%s car%s wpa_cli -i car%s-wlan0 '
                                                         'scan_results | wc -l'
                                                         % (mn_wifi_dir, client_id, client_id),
                                                         shell=True))
+                    
                     if n_aps>2 and 'car%s' % client_id in wifi.WiFiMsg.association and int(_wifi.target_load)<5:
                         if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid:
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'

@@ -89,9 +89,9 @@ class wifiAPP(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
         # print msg.data
-        from ryu.lib.packet import packet
+        #from ryu.lib.packet import packet
         pkt = packet.Packet(msg.data)
-        print pkt
+        #print pkt
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
             # ignore lldp packet
@@ -99,9 +99,8 @@ class wifiAPP(app_manager.RyuApp):
         dst = eth.dst
         src = eth.src
         dpid = datapath.id
-
         self.mac_to_port.setdefault(dpid, {})
-        mn_wifi_dir = '/root/mininet-wifi/util/m'
+        mn_wifi_dir = '/home/anuj/work/mininet-wifi/util/m'
 
         _ipv4 = pkt.get_protocol(ipv4.ipv4)
 
@@ -110,7 +109,6 @@ class wifiAPP(app_manager.RyuApp):
                 _udp = pkt.get_protocol(udp.udp)
                 if _udp.src_port == 8000: #Client to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiMsg)
-                
                     target_rssi = int(_wifi.target_rssi)
                     rssi = int(_wifi.rssi)
                     client_id = "%01d" % (int(_wifi.client[-2:]),)
@@ -146,12 +144,20 @@ class wifiAPP(app_manager.RyuApp):
                     #if rssi < target_rssi and target_rssi > -40:
                     #   if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
                     msg1 = "%s" % ("Hello")
-                    print msg1
-                    print "Src is %s" % _ipv4.src
+                    con_ = 'h1'
+                    if con_ == 'h1':
+     		        con_iface = 'h1-eth0'
+		        con_ip = '10.0.0.101'
+                    elif con_ == 'h2':
+     		        con_iface = 'h2-eth0'
+		        con_ip = '10.0.0.102'
+                    elif con_ == 'h3':
+     		        con_iface = 'h3-eth0'
+		        con_ip = '10.0.0.103'
+
                     from scapy.all import *
-                    packet1 = IP(src="172.17.0.2", dst="%s" % (_ipv4.src))/UDP(sport=8002, dport=8000)/msg1
-                    print packet1
-                    # send(packet1, verbose=0, iface="eth0")
+                    packet1 = IP(src=con_ip, dst="%s" % (_ipv4.src))/UDP(sport=8002, dport=8000)/msg1
+                    send(packet1, verbose=0, iface=con_iface")
                     '''
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 scan '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))

@@ -98,17 +98,15 @@ class wifiAPP(app_manager.RyuApp):
         mn_wifi_dir = '~/mininet-wifi/util/m'
 
         _ipv4 = pkt.get_protocol(ipv4.ipv4)
-
         if hasattr(_ipv4, 'proto'):
             if _ipv4.proto == 17:
                 _udp = pkt.get_protocol(udp.udp)
                 if _udp.src_port == 8000: #Client to Controller
                     _wifi = pkt.get_protocol(wifi.WiFiMsg)
-
                     target_rssi = int(_wifi.target_rssi)
                     rssi = int(_wifi.rssi)
                     client_id = "%01d" % (int(_wifi.client[-2:]),)
-
+                    n_clients = 10
                     #if 'sta%s' % client_id in wifi.WiFiMsg.association:
                     #    if wifi.WiFiMsg.association['sta%s' % client_id]:
                     #        client = '02:00:00:00:00:%02d' % int(client_id)
@@ -128,13 +126,14 @@ class wifiAPP(app_manager.RyuApp):
                     #                                                % (mn_wifi_dir, ap_id, ap_id), shell=True))
                     #        self.logger.info("wifi msg:: bssid %s has %s associated stations..",
                     #                         ap, n_clients)
-
                     self.logger.info("wifi msg:: client car%s, rssi %s, bssid %s, ssid %s,"
                                      "target_bssid %s, target_rssi %s, load %s, target_load %s",
                                      client_id, rssi, _wifi.bssid, _wifi.ssid,
                                      _wifi.target_bssid, target_rssi, _wifi.load, _wifi.target_load)
                     if rssi > target_rssi:
                         wifi.WiFiMsg.association['car%s' % client_id] = _wifi.bssid
+
+                    n_aps=0
                     if rssi < target_rssi and target_rssi > -70:
                         if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 scan '
@@ -148,9 +147,10 @@ class wifiAPP(app_manager.RyuApp):
                     n_aps = int(subprocess.check_output('%s car%s wpa_cli -i car%s-wlan0 '
                                                         'scan_results | wc -l'
                                                         % (mn_wifi_dir, client_id, client_id),
-                                                        shell=True))
-                    if n_aps>2 and 'car%s' % client_id in wifi.WiFiMsg.association and int(_wifi.target_load)<5:
-                        if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid:
+                                                        shell=True)) - 1
+
+                    if n_aps>=2 and 'car%s' % client_id in wifi.WiFiMsg.association and int(_wifi.target_load)<n_clients:
+                        if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid or int(_wifi.target_load)>=n_clients:
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'
                                       % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
                             os.system('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'

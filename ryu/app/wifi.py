@@ -106,26 +106,7 @@ class wifiAPP(app_manager.RyuApp):
                     target_rssi = int(_wifi.target_rssi)
                     rssi = int(_wifi.rssi)
                     client_id = "%01d" % (int(_wifi.client[-2:]),)
-                    n_clients = 10
-                    #if 'sta%s' % client_id in wifi.WiFiMsg.association:
-                    #    if wifi.WiFiMsg.association['sta%s' % client_id]:
-                    #        client = '02:00:00:00:00:%02d' % int(client_id)
-                    #        msg = "%s,%s" % (client, wifi.WiFiMsg.association['sta%s' % client_id])
-                    #        packet_ = scapy.IP(src="172.17.0.2", dst="172.17.0.3") / scapy.UDP(sport=8001, dport=8002) / msg
-                    #        scapy.send(packet_, verbose=0, iface="eth0")
-
-                    #if _wifi.bssid not in wifi.WiFiMsg.association['sta%s' % client_id]:
-                    #    os.system('~/ctrl-msg.py %s %s' % (_wifi.client, _wifi.bssid))
-                    #    wifi.WiFiMsg.association['sta%s' % client_id] = _wifi.bssid
-
-                    #if _wifi.target_bssid and _wifi.bssid:
-                    #    for ap in ([_wifi.bssid, _wifi.target_bssid]):
-                    #        ap_id = "%01d" % (int(ap[-2:]),)
-                    #        n_clients = int(subprocess.check_output('%s ap%s hostapd_cli -i ap%s-wlan1 '
-                    #                                                'list_sta | wc -l'
-                    #                                                % (mn_wifi_dir, ap_id, ap_id), shell=True))
-                    #        self.logger.info("wifi msg:: bssid %s has %s associated stations..",
-                    #                         ap, n_clients)
+                    slicing = True
                     self.logger.info("wifi msg:: client car%s, rssi %s, bssid %s, ssid %s,"
                                      "target_bssid %s, target_rssi %s, load %s, target_load %s",
                                      client_id, rssi, _wifi.bssid, _wifi.ssid,
@@ -134,7 +115,7 @@ class wifiAPP(app_manager.RyuApp):
                         wifi.WiFiMsg.association['car%s' % client_id] = _wifi.bssid
 
                     n_aps=0
-                    if rssi < target_rssi and target_rssi > -70:
+                    if rssi < target_rssi and target_rssi > -70 and wifi.WiFiMsg.association:
                         if wifi.WiFiMsg.association['car%s' % client_id] != _wifi.target_bssid:
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 scan '
                                       '>/dev/null 2>&1' % (mn_wifi_dir, client_id, client_id))
@@ -149,8 +130,8 @@ class wifiAPP(app_manager.RyuApp):
                                                         % (mn_wifi_dir, client_id, client_id),
                                                         shell=True)) - 1
 
-                    if n_aps>=2 and 'car%s' % client_id in wifi.WiFiMsg.association and int(_wifi.target_load)<n_clients:
-                        if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid or int(_wifi.target_load)>=n_clients:
+                    if n_aps>=2 and 'car%s' % client_id in wifi.WiFiMsg.association and int(_wifi.target_load)<int(_wifi.load):
+                        if wifi.WiFiMsg.association['car%s' % client_id] == _wifi.target_bssid or slicing and int(_wifi.target_load)+1<int(_wifi.load):
                             self.logger.info('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'
                                       % (mn_wifi_dir, client_id, client_id, _wifi.target_bssid))
                             os.system('%s car%s wpa_cli -i car%s-wlan0 roam %s >/dev/null 2>&1'

